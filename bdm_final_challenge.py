@@ -6,7 +6,7 @@ import re
 if __name__ == '__main__':
     sc = SparkContext()
     streets = sc.textFile('/data/share/bdm/nyc_cscl.csv', use_unicode=False).cache() #'/data/share/bdm/complaints.csv'
-    all_tickets = sc.textFile('/data/share/bdm/nyc_parking_violations/', use_unicode=False).cache()
+    all_tickets = sc.textFile('/data/share/bdm/nyc_parking_violation/', use_unicode=False).cache()
     
     def lines(partId, records):
         if partId==0:
@@ -68,12 +68,12 @@ if __name__ == '__main__':
                 temp = re.findall(r'\d+',house_number)
                 res = list(map(int,temp))
                 if len(res) > 0:
-                    idd = findid(row[1], row[3], row[2])
-                    if idd != None and (row[0] >= 2015 and row[0] <= 2019):
-                        yield (idd, row[0])
+                    idd = findid(county, street_name, res)
+                    if idd != None and (d >= 2015 and d <= 2019):
+                        yield (idd, d)
     
     ticket = all_tickets.mapPartitionsWithIndex(extractScores)
-    test = ticket.map(lambda x: ((x[0]), {x[0][1]: 1} )) \
+    test = ticket.map(lambda x: ((x[0]), {x[1]: 1} )) \
     .reduceByKey(lambda x,y: (Counter(x) + Counter(y))) \
     .mapValues(lambda x: ([i for i in x.values()], len(x.keys()))) \
     .mapValues(lambda x: (x[0], (x[0][-1]- x[0][0])/ x[1]))
