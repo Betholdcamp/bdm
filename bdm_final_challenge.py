@@ -87,4 +87,12 @@ if __name__ == '__main__':
     .mapValues(lambda x: ([i for i in x.values()], len(x.keys()))) \
     .mapValues(lambda x: (x[0], (x[0][-1]- x[0][0])/ x[1]))
     
-    test.saveAsTextFile('finale')
+    #test.saveAsTextFile('finale')
+    final = test.map(lambda x: (x[0], x[1][0][0], x[1][0][1], x[1][0][2], x[1][0][3], x[1][0][4])) 
+    
+    sqlContext = SQLContext(sc)
+    df = sqlContext.createDataFrame(final, ('ID', '2015_Count', '2016_Count', '2017_Count', '2018_Count', '2019_Count','OLS'))
+    
+    df.write \
+    .format('com.databricks.spark.csv') \
+    .save(sys.argv[2])
