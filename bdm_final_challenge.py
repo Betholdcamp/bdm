@@ -14,6 +14,7 @@ if __name__ == '__main__':
         
         import csv
         reader = csv.reader(records)
+        next(reader)
         for row in reader:
             if row[0] != '' and row[2] != '' and row[3] != '' and row[4] != '' and row[5] != '':
                 (PHYSICALID, L_LOW_HN, L_HIGH_HN, R_LOW_HN, R_HIGH_HN, ST_LABEL, BOROCODE, FULL_STREE) = (row[0], row[2], row[3], row[4], row[5], row[10], row[13], row[28])
@@ -42,21 +43,8 @@ if __name__ == '__main__':
     def findid(borough, street, h_num):
         dd = None
         for i in street_list.value:
-            if (i[3] == street or i[5] == street) and i[4]==borough:
-                if (len(h_num) == 1) and (h_num[0] % 2 == 0) and (h_num[0] >= i[2][0][0] and h_num[0] <= i[2][1][0]):
+            if (i[3] == street or i[5] == street) and (i[4]==borough) and ((h_num[-1] >= i[2][0][-1] and h_num[-1] <= i[2][1][-1]) or (h_num[-1] >= i[1][0][-1] and h_num[-1] <= i[1][1][-1])):
                     dd = i[0]
-                    break
-                elif (len(h_num) == 1) and (h_num[0] % 2 != 0) and (h_num[0] >= i[1][0][0] and h_num[0] <= i[1][1][0]):
-                    dd = i[0]
-                    break
-                elif (len(h_num) == 2) and (h_num[1] % 2 == 0) and (len(i[2][0])==2) and (len(i[2][1])==2) and (h_num[1] >= i[2][0][1] and h_num[1] <= i[2][1][1]):
-                    dd = i[0]
-                    break  
-                elif (len(h_num) == 2) and (h_num[1] % 2 != 0) and (len(i[1][0])==2) and (len(i[1][1])==2) and (h_num[1] >= i[1][0][1] and h_num[1] <= i[1][1][1]):
-                    dd = i[0]
-                    break
-                else:
-                    dd = None
                     break
             else:
                 dd = None
@@ -68,24 +56,25 @@ if __name__ == '__main__':
             next(records)
         import csv
         reader = csv.reader(records)
+        next(reader)
         for row in reader:
             if row[4] != '' and row[21] != '' and row[23] != '' and row[24] != '':
                 (date, county, house_number, street_name, ) = (row[4], row[21], row[23], row[24])
-                #d = int(date.split('/')[2])
-                d = date.split('/')
+                d = int(date.split('/')[-1])
+                #d = date.split('/')
                 temp = re.findall(r'\d+',house_number)
                 res = list(map(int,temp))
                 res = tuple(res)
-                if len(res) > 0 and len(d) > 2:
+                if len(res) > 0:
                     idd = findid(county, street_name, res)
-                    if idd != None and (int(d[2]) >= 2015 and int(d[2]) <= 2019):
+                    if idd != None and (d >= 2015 and d <= 2019):
                         yield (idd, d)
     
     ticket = all_tickets.mapPartitionsWithIndex(extractScores)
-    test = ticket.map(lambda x: ((x[0]), {x[1]: 1} )) \
+    test = ticket.map(lambda x: (x[0], {x[1]: 1} )) \
     .reduceByKey(lambda x,y: (Counter(x) + Counter(y))) \
     .mapValues(lambda x: ([i for i in x.values()], len(x.keys()))) \
-    .mapValues(lambda x: (x[0], (x[0][-1]- x[0][0])/ x[1]))
+    .mapValues(lambda x: (tuple(x[0]), (x[0][-1]- x[0][0])/ x[1]))
     
     #test.saveAsTextFile('finale')
     final = test.map(lambda x: (x[0], x[1][0][0], x[1][0][1], x[1][0][2], x[1][0][3], x[1][0][4])) 
@@ -95,4 +84,5 @@ if __name__ == '__main__':
     
     df.write \
     .format('com.databricks.spark.csv') \
-    .save(sys.argv[2])
+    .option('header', 'true') \
+    .save(sys.argv[1])
