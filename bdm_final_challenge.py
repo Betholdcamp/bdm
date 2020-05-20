@@ -1,5 +1,6 @@
 import sys
 from pyspark import SparkContext
+from pyspark.sql import SQLContext
 from collections import Counter
 import re
 
